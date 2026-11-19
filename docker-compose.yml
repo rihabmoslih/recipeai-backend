@@ -1,0 +1,38 @@
+services:
+  user-db:
+    image: postgres:16
+    container_name: user-db
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - user-data:/var/lib/postgresql/data
+  ingredient-db:
+    image: postgres:16
+    container_name: ingredient-db
+    environment:
+      POSTGRES_DB: ingredient_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - ingredient-data:/var/lib/postgresql/data
+  recipe-db:
+    image: postgres:16
+    container_name: recipe-db
+    environment:
+      POSTGRES_DB: recipe_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - recipe-data:/var/lib/postgresql/data
+volumes:
+  user-data:
+  ingredient-data:
+  recipe-data:
