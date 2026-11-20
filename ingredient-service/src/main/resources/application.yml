@@ -1,0 +1,13 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: ingredient-service
+  datasource:
+    url: jdbc:postgresql://localhost:5434/ingredient_db
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
