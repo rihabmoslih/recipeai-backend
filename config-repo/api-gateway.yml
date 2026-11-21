@@ -1,0 +1,24 @@
+server:
+  port: 8000
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: user-service
+              uri: lb://USER-SERVICE
+              predicates:
+                - Path=/users/**
+            - id: ingredient-service
+              uri: lb://INGREDIENT-SERVICE
+              predicates:
+                - Path=/ingredients/**,/pantry/**
+            - id: recipe-service
+              uri: lb://RECIPE-SERVICE
+              predicates:
+                - Path=/recipes/**,/favorites/**
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
