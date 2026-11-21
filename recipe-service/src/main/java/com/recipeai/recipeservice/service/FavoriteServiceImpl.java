@@ -23,9 +23,11 @@ public class FavoriteServiceImpl implements FavoriteService {
     private final FavoriteRepository favoriteRepository;
     private final RecipeRepository recipeRepository;
     private final FavoriteMapper favoriteMapper;
+    private final RemoteReferenceValidator remoteValidator;
 
     @Override
     public FavoriteResponseDTO add(FavoriteRequestDTO dto) {
+        remoteValidator.requireUser(dto.getUserId());
         Recipe recipe = recipeRepository.findById(dto.getRecipeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recette introuvable"));
         if (favoriteRepository.existsByUserIdAndRecipeId(dto.getUserId(), dto.getRecipeId())) {
@@ -51,3 +53,4 @@ public class FavoriteServiceImpl implements FavoriteService {
         favoriteRepository.deleteById(id);
     }
 }
+

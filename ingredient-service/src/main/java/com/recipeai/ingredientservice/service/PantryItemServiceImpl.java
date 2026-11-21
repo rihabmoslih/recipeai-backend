@@ -23,10 +23,11 @@ public class PantryItemServiceImpl implements PantryItemService {
     private final PantryItemRepository pantryItemRepository;
     private final IngredientRepository ingredientRepository;
     private final PantryItemMapper pantryItemMapper;
+    private final RemoteUserValidator remoteUserValidator;
 
     @Override
     public PantryItemResponseDTO create(PantryItemRequestDTO dto) {
-        // Plus tard (V4) : verifier que userId existe via OpenFeign vers user-service.
+        remoteUserValidator.requireUser(dto.getUserId());
         PantryItem item = pantryItemMapper.toEntity(dto);
         item.setIngredient(getIngredientOrThrow(dto.getIngredientId()));
         return pantryItemMapper.toDto(pantryItemRepository.save(item));
@@ -47,6 +48,7 @@ public class PantryItemServiceImpl implements PantryItemService {
     @Override
     public PantryItemResponseDTO update(Long id, PantryItemRequestDTO dto) {
         PantryItem item = getOrThrow(id);
+        remoteUserValidator.requireUser(dto.getUserId());
         pantryItemMapper.updateEntity(dto, item);
         item.setIngredient(getIngredientOrThrow(dto.getIngredientId()));
         return pantryItemMapper.toDto(pantryItemRepository.save(item));
@@ -70,3 +72,4 @@ public class PantryItemServiceImpl implements PantryItemService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingredient introuvable"));
     }
 }
+
