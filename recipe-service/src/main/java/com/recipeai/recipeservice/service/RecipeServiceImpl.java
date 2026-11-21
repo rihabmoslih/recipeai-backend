@@ -24,10 +24,11 @@ public class RecipeServiceImpl implements RecipeService {
     private final RecipeRepository recipeRepository;
     private final FavoriteRepository favoriteRepository;
     private final RecipeMapper recipeMapper;
+    private final RemoteReferenceValidator remoteValidator;
 
     @Override
     public RecipeResponseDTO create(RecipeRequestDTO dto) {
-        // Plus tard (V4) : verifier userId et ingredientId via OpenFeign.
+        remoteValidator.validateRecipe(dto.getUserId(), dto.getIngredients());
         Recipe recipe = recipeMapper.toEntity(dto);
         recipe.setDateCreation(LocalDateTime.now());
         recipe.setScorePourcentage(computeScore(recipe));
@@ -56,6 +57,7 @@ public class RecipeServiceImpl implements RecipeService {
     @Override
     public RecipeResponseDTO update(Long id, RecipeRequestDTO dto) {
         Recipe recipe = getOrThrow(id);
+        remoteValidator.validateIngredients(dto.getIngredients());
         recipe.setTitre(dto.getTitre());
         recipe.setDescription(dto.getDescription());
         recipe.setDuree(dto.getDuree());
@@ -91,3 +93,4 @@ public class RecipeServiceImpl implements RecipeService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recette introuvable"));
     }
 }
+
