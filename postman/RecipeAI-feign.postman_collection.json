@@ -1,0 +1,1480 @@
+{
+  "info": {
+    "name": "RecipeAI",
+    "description": "Collection de validation du CRUD et de la communication OpenFeign, via l'api-gateway (port 8000). Executer dans le Collection Runner, dans l'ordre. Les donnees sont creees puis supprimees (dossier 4).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1 - user-service",
+      "item": [
+        {
+          "name": "Créer un utilisateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"userId\", pm.response.json().id);",
+                  "pm.test(\"Role USER, sans mot de passe\", function () { var j = pm.response.json(); pm.expect(j.role).to.eql(\"USER\"); pm.expect(j).to.not.have.property(\"motDePasse\"); });"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"userEmail\", \"user\" + Date.now() + \"@test.com\");",
+                  "pm.collectionVariables.set(\"ingName1\", \"Tomate-\" + Date.now());",
+                  "pm.collectionVariables.set(\"ingName2\", \"Oignon-\" + Date.now());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Rihab\",\n  \"email\": \"{{userEmail}}\",\n  \"motDePasse\": \"12345678\",\n  \"regime\": \"vegetarien\",\n  \"allergies\": [\n    \"arachides\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Créer : validation 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"\",\n  \"email\": \"invalide\",\n  \"motDePasse\": \"123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Créer : email en double 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Rihab\",\n  \"email\": \"{{userEmail}}\",\n  \"motDePasse\": \"12345678\",\n  \"regime\": \"vegetarien\",\n  \"allergies\": [\n    \"arachides\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Lister les utilisateurs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Liste non vide\", function () { pm.expect(pm.response.json().length).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consulter un utilisateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Email attendu\", function () { pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get(\"userEmail\")); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consulter : inconnu 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Modifier un utilisateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Regime modifie\", function () { pm.expect(pm.response.json().regime).to.eql(\"vegan\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Rihab\",\n  \"email\": \"{{userEmail}}\",\n  \"motDePasse\": \"12345678\",\n  \"regime\": \"vegan\",\n  \"allergies\": [\n    \"arachides\"\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - ingredient-service",
+      "item": [
+        {
+          "name": "Créer ingrédient 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"ingredientId1\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"{{ingName1}}\",\n  \"categorie\": \"Legume\",\n  \"unite\": \"kg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Créer ingrédient 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"ingredientId2\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"{{ingName2}}\",\n  \"categorie\": \"Legume\",\n  \"unite\": \"kg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Créer ingrédient : validation 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"\",\n  \"categorie\": \"Legume\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Créer ingrédient : doublon 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"{{ingName1}}\",\n  \"categorie\": \"Legume\",\n  \"unite\": \"kg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Lister les ingrédients",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Liste non vide\", function () { pm.expect(pm.response.json().length).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consulter un ingrédient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients/{{ingredientId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients",
+                "{{ingredientId1}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consulter ingrédient : inconnu 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Modifier un ingrédient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Categorie modifiee\", function () { pm.expect(pm.response.json().categorie).to.eql(\"Legume frais\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients/{{ingredientId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients",
+                "{{ingredientId1}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"{{ingName1}}\",\n  \"categorie\": \"Legume frais\",\n  \"unite\": \"kg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Garde-manger : ajouter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"pantryId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pantry",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pantry"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"ingredientId\": \"{{ingredientId1}}\",\n  \"quantite\": 2.5,\n  \"dateExpiration\": \"2026-12-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Garde-manger : utilisateur inconnu 404 (Feign)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pantry",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pantry"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 999999,\n  \"ingredientId\": \"{{ingredientId1}}\",\n  \"quantite\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Garde-manger : ingrédient inconnu 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pantry",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pantry"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"ingredientId\": 999999,\n  \"quantite\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Garde-manger : validation 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pantry",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pantry"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"ingredientId\": \"{{ingredientId1}}\",\n  \"quantite\": -1\n}"
+            }
+          }
+        },
+        {
+          "name": "Garde-manger d'un utilisateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Nom de l'ingredient present\", function () { pm.expect(pm.response.json()[0].ingredientNom).to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pantry/user/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pantry",
+                "user",
+                "{{userId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Garde-manger : consulter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pantry/{{pantryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pantry",
+                "{{pantryId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Garde-manger : modifier",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Quantite modifiee\", function () { pm.expect(pm.response.json().quantite).to.eql(4); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pantry/{{pantryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pantry",
+                "{{pantryId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"ingredientId\": \"{{ingredientId1}}\",\n  \"quantite\": 4,\n  \"dateExpiration\": \"2026-12-15\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Supprimer ingrédient utilisé : 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients/{{ingredientId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients",
+                "{{ingredientId1}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - recipe-service",
+      "item": [
+        {
+          "name": "Créer une recette",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"recipeId\", pm.response.json().id);",
+                  "pm.test(\"Score 50\", function () { pm.expect(pm.response.json().scorePourcentage).to.eql(50); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recipes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"Salade de tomates\",\n  \"description\": \"Salade simple\",\n  \"duree\": 10,\n  \"userId\": \"{{userId}}\",\n  \"ingredients\": [\n    {\n      \"ingredientId\": \"{{ingredientId1}}\",\n      \"quantite\": 2,\n      \"disponible\": true\n    },\n    {\n      \"ingredientId\": \"{{ingredientId2}}\",\n      \"quantite\": 1,\n      \"disponible\": false\n    }\n  ],\n  \"steps\": [\n    {\n      \"ordre\": 1,\n      \"instruction\": \"Couper les tomates\"\n    },\n    {\n      \"ordre\": 2,\n      \"instruction\": \"Assaisonner\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Créer recette : utilisateur inconnu 404 (Feign)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recipes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"Salade de tomates\",\n  \"description\": \"Salade simple\",\n  \"duree\": 10,\n  \"userId\": 999999,\n  \"ingredients\": [\n    {\n      \"ingredientId\": \"{{ingredientId1}}\",\n      \"quantite\": 2,\n      \"disponible\": true\n    },\n    {\n      \"ingredientId\": \"{{ingredientId2}}\",\n      \"quantite\": 1,\n      \"disponible\": false\n    }\n  ],\n  \"steps\": [\n    {\n      \"ordre\": 1,\n      \"instruction\": \"Couper les tomates\"\n    },\n    {\n      \"ordre\": 2,\n      \"instruction\": \"Assaisonner\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Créer recette : ingrédient inconnu 404 (Feign)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recipes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"Salade de tomates\",\n  \"description\": \"Salade simple\",\n  \"duree\": 10,\n  \"userId\": \"{{userId}}\",\n  \"ingredients\": [\n    {\n      \"ingredientId\": \"{{ingredientId1}}\",\n      \"quantite\": 2,\n      \"disponible\": true\n    },\n    {\n      \"ingredientId\": 999999,\n      \"quantite\": 1,\n      \"disponible\": false\n    }\n  ],\n  \"steps\": [\n    {\n      \"ordre\": 1,\n      \"instruction\": \"Couper les tomates\"\n    },\n    {\n      \"ordre\": 2,\n      \"instruction\": \"Assaisonner\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Créer recette : validation 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recipes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"\",\n  \"userId\": \"{{userId}}\",\n  \"ingredients\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "Lister les recettes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recipes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Recettes d'un utilisateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Au moins une recette\", function () { pm.expect(pm.response.json().length).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recipes/user/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes",
+                "user",
+                "{{userId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consulter une recette",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recipes/{{recipeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes",
+                "{{recipeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consulter recette : inconnue 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recipes/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Détails agrégés (Feign)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Utilisateur agrege\", function () { pm.expect(j.user.id).to.eql(Number(pm.collectionVariables.get(\"userId\"))); });",
+                  "pm.test(\"Ingredients enrichis\", function () { pm.expect(j.ingredients.length).to.eql(2); pm.expect(j.ingredients[0].nom).to.exist; pm.expect(j.ingredients[0].unite).to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recipes/{{recipeId}}/details",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes",
+                "{{recipeId}}",
+                "details"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Modifier une recette",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Titre modifie\", function () { pm.expect(pm.response.json().titre).to.eql(\"Salade modifiee\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recipes/{{recipeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes",
+                "{{recipeId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"Salade modifiee\",\n  \"description\": \"Salade simple\",\n  \"duree\": 10,\n  \"userId\": \"{{userId}}\",\n  \"ingredients\": [\n    {\n      \"ingredientId\": \"{{ingredientId1}}\",\n      \"quantite\": 2,\n      \"disponible\": true\n    },\n    {\n      \"ingredientId\": \"{{ingredientId2}}\",\n      \"quantite\": 1,\n      \"disponible\": false\n    }\n  ],\n  \"steps\": [\n    {\n      \"ordre\": 1,\n      \"instruction\": \"Couper les tomates\"\n    },\n    {\n      \"ordre\": 2,\n      \"instruction\": \"Assaisonner\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Favori : ajouter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"favoriteId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favorites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favorites"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"recipeId\": \"{{recipeId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Favori : doublon 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favorites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favorites"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"recipeId\": \"{{recipeId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Favori : utilisateur inconnu 404 (Feign)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favorites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favorites"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 999999,\n  \"recipeId\": \"{{recipeId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Favoris d'un utilisateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Titre de la recette present\", function () { pm.expect(pm.response.json()[0].recipeTitre).to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favorites/user/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favorites",
+                "user",
+                "{{userId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Nettoyage",
+      "item": [
+        {
+          "name": "Supprimer le favori",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favorites/{{favoriteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favorites",
+                "{{favoriteId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Supprimer la recette",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recipes/{{recipeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes",
+                "{{recipeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Supprimer la recette : déjà supprimée 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recipes/{{recipeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recipes",
+                "{{recipeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Supprimer l'élément de garde-manger",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pantry/{{pantryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pantry",
+                "{{pantryId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Supprimer l'ingrédient 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients/{{ingredientId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients",
+                "{{ingredientId1}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Supprimer l'ingrédient 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients/{{ingredientId2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingredients",
+                "{{ingredientId2}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Supprimer l'utilisateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    }
+  ]
+}
